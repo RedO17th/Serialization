@@ -328,6 +328,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7551523d5f6635e45bc64cca1e5a9edd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _numberOfElement: 5
+  _fileName: note.dat
 --- !u!4 &2014302002
 Transform:
   m_ObjectHideFlags: 0
