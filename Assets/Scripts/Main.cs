@@ -220,14 +220,14 @@ class ListRand
 
     public void Deserialize(FileStream s) 
     {
-        List<int[]> items = FormItemsFromFile(s);
+        List<int[]> items = GenerateItemsFromFile(s);
 
         if (items.Count == 0)
             return;
 
         ListNode lastItem = InitializeHeadItem();
 
-        FormMainSequance(ref lastItem, items);
+        GenerateMainSequance(ref lastItem, items);
 
         Tail = lastItem;
         Count = items.Count;
@@ -237,7 +237,7 @@ class ListRand
         items.Clear();
     }
 
-    private List<int[]> FormItemsFromFile(FileStream s)
+    private List<int[]> GenerateItemsFromFile(FileStream s)
     {
         var items = new List<int[]>();
 
@@ -250,13 +250,13 @@ class ListRand
         {
             string[] dataInLine = resultLine.Split(new char[] { splitter }, StringSplitOptions.RemoveEmptyEntries);
 
-            items.Add(FormArrayOfIndexes(dataInLine));
+            items.Add(GenerateArrayOfIndexes(dataInLine));
         }
 
         return items;
     }
 
-    private int[] FormArrayOfIndexes(string[] dataInLine)
+    private int[] GenerateArrayOfIndexes(string[] dataInLine)
     {
         if (dataInLine.Length == 0)
             return new int[0];
@@ -278,7 +278,7 @@ class ListRand
         return Head;
     }
 
-    private void FormMainSequance(ref ListNode currentItem, List<int[]> items)
+    private void GenerateMainSequance(ref ListNode currentItem, List<int[]> items)
     {
         ListNode nextItem = null;
 
