@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Xml.Linq;
-using UnityEditorInternal.Profiling.Memory.Experimental;
 using UnityEngine;
-using static UnityEditor.Progress;
 
 public class Main : MonoBehaviour
 {
@@ -152,6 +149,8 @@ class ListRand
 
     #endregion
 
+    #region Serialization
+
     public void Serialize(FileStream s)
     {
         using StreamWriter sw = new StreamWriter(s);
@@ -178,6 +177,10 @@ class ListRand
 
         return unknownID;
     }
+
+    #endregion
+
+    #region ClearingList
 
     public void Clear()
     {
@@ -211,64 +214,30 @@ class ListRand
         }
     }
 
+    #endregion
+
+    #region Deserialization
+
     public void Deserialize(FileStream s) 
     {
-        //Обдумать название метода,или попробовать избавиться от него
-        List<int[]> items = ReadFile(s);
+        List<int[]> items = FormItemsFromFile(s);
 
         if (items.Count == 0)
             return;
 
-        Head = new ListNode();
-        Head.Prev = null;
-        Head.Next = null;
+        ListNode lastItem = InitializeHeadItem();
 
-        var currentItem = Head;
-        ListNode nextItem = null;
+        FormMainSequance(ref lastItem, items);
 
-        int dataPositionID = 3;
-
-        for (int i = 0; i < items.Count; i++)
-        {
-            currentItem.Data = items[i][dataPositionID].ToString();
-            currentItem.Rand = null;
-
-            if (i != (items.Count - 1))
-            {
-                nextItem = new ListNode();
-
-                currentItem.Next = nextItem;
-                nextItem.Prev = currentItem;
-
-                currentItem = nextItem;
-            }
-        }
-
-        Tail = currentItem;
+        Tail = lastItem;
         Count = items.Count;
 
-        int unknownID = -1;
-        int referencePositionID = 2;
-
-        for (int i = 0; i < items.Count; i++)
-        {
-            var seq = items[i];
-
-            if (seq[referencePositionID] != unknownID)
-            {
-                var randomItemID = seq[referencePositionID];
-
-                var randomItem = GetByIndex(randomItemID);
-
-                var parentItem = GetByIndex(i);
-                parentItem.Rand = randomItem;
-            }
-        }
+        AddRandomItemsToSequenceItems(items);
 
         items.Clear();
     }
 
-    private List<int[]> ReadFile(FileStream s)
+    private List<int[]> FormItemsFromFile(FileStream s)
     {
         var items = new List<int[]>();
 
@@ -281,13 +250,13 @@ class ListRand
         {
             string[] dataInLine = resultLine.Split(new char[] { splitter }, StringSplitOptions.RemoveEmptyEntries);
 
-            items.Add(GenerateArrayOfIndexes(dataInLine));
+            items.Add(FormArrayOfIndexes(dataInLine));
         }
 
         return items;
     }
 
-    private int[] GenerateArrayOfIndexes(string[] dataInLine)
+    private int[] FormArrayOfIndexes(string[] dataInLine)
     {
         if (dataInLine.Length == 0)
             return new int[0];
@@ -299,54 +268,59 @@ class ListRand
 
         return result;
     }
+
+    private ListNode InitializeHeadItem()
+    {
+        Head = new ListNode();
+        Head.Prev = null;
+        Head.Next = null;
+
+        return Head;
+    }
+
+    private void FormMainSequance(ref ListNode currentItem, List<int[]> items)
+    {
+        ListNode nextItem = null;
+
+        int dataPositionIndex = 3;
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            currentItem.Data = items[i][dataPositionIndex].ToString();
+            currentItem.Rand = null;
+
+            if (i != (items.Count - 1))
+            {
+                nextItem = new ListNode();
+
+                currentItem.Next = nextItem;
+                nextItem.Prev = currentItem;
+
+                currentItem = nextItem;
+            }
+        }
+    }
+
+    private void AddRandomItemsToSequenceItems(List<int[]> items)
+    {
+        int unknownIndex = -1;
+        int referencePositionIndex = 2;
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            var fieldsData = items[i];
+
+            if (fieldsData[referencePositionIndex] != unknownIndex)
+            {
+                var randomItemID = fieldsData[referencePositionIndex];
+
+                var randomItem = GetByIndex(randomItemID);
+
+                var parentItem = GetByIndex(i);
+                    parentItem.Rand = randomItem;
+            }
+        }
+    }
+
+    #endregion
 }
-
-#region Green
-
-//ListNode currentItem = null;
-//for (int i = 0; i < items.Count; i++)
-//{
-//    if (Head == null)
-//    {
-//        Head = new ListNode(items[i][dataFieldID].ToString());
-//        Head.Prev = null;
-//        Head.Next = null;
-//        Head.Rand = null;
-
-//        currentItem = Head;
-//    }
-
-//    if (items[i][nextFieldID] != unknownID)
-//    {
-//        var newItem = new ListNode(items[i + 1][dataFieldID].ToString());
-//        newItem.Prev = currentItem;
-//        newItem.Next = null;
-//        newItem.Rand = null;
-
-//        currentItem.Next = newItem;
-//        currentItem = newItem;
-//    }
-//}
-
-//Tail = currentItem;
-//Count = items.Count;
-
-////Инициализация ссылок на рандомные объекты
-///
-//int randFieldID = 2;
-//for (int i = 0; i < items.Count; i++)
-//{
-//    if (items[i][randFieldID] != unknownID)
-//    {
-//        var randomItemID = items[i][randFieldID];
-
-//        var randomItem = GetByIndex(randomItemID);
-
-//        var parentItem = GetByIndex(i);
-//        parentItem.Rand = randomItem;
-//    }
-//}
-
-//items.Clear();
-
-#endregion
