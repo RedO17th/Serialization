@@ -1,18 +1,12 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Security;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
-using TreeEditor;
 using UnityEngine;
-using static UnityEditor.ShaderData;
 
 public class Main : MonoBehaviour
 {
     [SerializeField] private int _numberOfElement = 5;
-    [SerializeField] private string _fileName = "note.dat";
+    [SerializeField] private string _fileName = "note.txt";
 
     private ListRand _list = new ListRand();
 
@@ -20,26 +14,21 @@ public class Main : MonoBehaviour
 
     void Start()
     {
-        InitializeList();
-
         _path = Path.Combine(Application.dataPath, _fileName);
 
-        Debug.Log("dataPath : " + _path);
+        InitializeList();
 
-        var formatter = new BinaryFormatter();
-
-        using (FileStream fstream = new FileStream(_path, FileMode.OpenOrCreate))
+        using (FileStream fstream = new FileStream(_path, FileMode.Create))
         {
-            formatter.Serialize(fstream, _list);
+            _list.Serialize(fstream);
         }
 
-        var newList = new ListRand();
+        _list.Clear();
 
-        using (FileStream fstream = new FileStream(_path, FileMode.OpenOrCreate))
+        using (FileStream fstream = File.OpenRead(_path))
         {
-            newList = (ListRand)formatter.Deserialize(fstream);
+            _list.Deserialize(fstream);
         }
-
     }
 
     private void InitializeList()
@@ -51,17 +40,16 @@ public class Main : MonoBehaviour
             _list.Add(new ListNode(Convert.ToString(++value)));
 
         var secondNode = _list.GetByIndex(1);
-            secondNode.SetRand(secondNode);
+            secondNode.Rand = secondNode;
 
         var thirdNode = _list.GetByIndex(2);
-        thirdNode.SetRand(_list.GetLast());
+            thirdNode.Rand = _list.GetLast();
 
         var fourthNode = _list.GetByIndex(3);
-        fourthNode.SetRand(_list.GetFirst());
+            fourthNode.Rand = _list.GetFirst();
     }
 }
 
-[Serializable]
 class ListNode
 {
     public ListNode Prev;
@@ -76,7 +64,6 @@ class ListNode
         Rand = null;
         Data = string.Empty;
     }
-
     public ListNode(string value)
     {
         Prev = null;
@@ -84,15 +71,8 @@ class ListNode
         Rand = null;
         Data = value;
     }
-
-    public void SetPrev(ListNode previous) => Prev = previous;
-
-    public void SetNext(ListNode next) => Next = next;
-
-    public void SetRand(ListNode rand) => Rand = rand;
 }
 
-[Serializable]
 class ListRand
 {
     public ListNode Head;
@@ -126,8 +106,8 @@ class ListRand
         {
             if (temp.Next == null)
             {
-                temp.SetNext(newNode);
-                newNode.SetPrev(temp);
+                temp.Next = newNode;
+                newNode.Prev = temp;
 
                 Tail = newNode;
 
@@ -149,11 +129,9 @@ class ListRand
     {
         if (index < 0 && index >= Count) return null;
 
-        //TODO: Refactoring
         if (Head == null) return null;
 
         if (index == 0) return Head;
-        //
 
         ListNode result = Head;
 
@@ -170,22 +148,145 @@ class ListRand
 
     #endregion
 
-    //Test
-    //public void Show()
-    //{
-    //    var item = Head;
-    //    for (int i = 0; i < Count; i++)
-    //    {
-    //        Debug.Log($"Index = { i }, value = { item?.Data }");
+    public void Serialize(FileStream s)
+    {
+        int id = -1;
 
-    //        if (item.Next == null)
-    //            break;
+        using StreamWriter sw = new StreamWriter(s);
 
-    //        item = item.Next;
-    //    }
-    //}
+        for (ListNode currentNode = Head; currentNode != null; currentNode = currentNode.Next)
+        {
+            ++id;
+            int prevId = -1;
+            int nextId = -1;
+            int randId = -1;
 
-    public void Serialize(FileStream s) { }
+            if (currentNode.Prev != null) 
+                prevId = GetID(currentNode.Prev);
 
-    public void Deserialize(FileStream s) { }
+            if (currentNode.Next != null) 
+                nextId = GetID(currentNode.Next);
+
+            if (currentNode.Rand != null)
+                randId = GetID(currentNode.Rand);
+
+            sw.WriteLine($"{id}:{prevId}:{nextId}:{randId}:{currentNode.Data}");
+        }
+    }
+
+    private int GetID(ListNode element)
+    {
+        int id = -1;
+
+        for (ListNode currentNode = Head; currentNode != null; currentNode = currentNode.Next)
+        {
+            id++;
+
+            if (currentNode == element)
+                break;    
+        }
+
+        return id;
+    }
+
+    public void Clear()
+    {
+        if(Head == null)
+            return;
+
+        ListNode nextElement = null;
+
+        for (ListNode currentNode = Head; currentNode != null;)
+        {
+            nextElement = currentNode.Next;
+
+            currentNode.Next = null;
+            currentNode.Prev = null;
+            currentNode.Rand = null;
+            currentNode.Data = string.Empty;
+
+            if (nextElement == null)
+                break;
+
+            currentNode = nextElement;
+        }
+
+        Head = null;
+        Tail = null;
+        Count = -1;
+    }
+
+    public void Deserialize(FileStream s) 
+    {
+        using StreamReader sr = new StreamReader(s);
+
+        List<int[]> elements = new List<int[]>();
+
+        string resultLine = string.Empty;
+        while ((resultLine = sr.ReadLine()) != null)
+        {
+            var dataInLine = resultLine.Split(new char[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+            
+            var data = new int[dataInLine.Length - 1];
+
+            for (int i = 1; i < dataInLine.Length; i++)
+                data[i - 1] = Convert.ToInt32(dataInLine[i]);
+
+            elements.Add(data);
+        }
+
+        if(elements.Count == 0)
+            return;
+
+        const int nextFieldID = 1;
+        const int randFieldID = 2;
+        const int dataFieldID = 3;
+        const int defaultValue = -1;
+
+        ListNode currentItem = null;
+
+        //Инициализация прямого порядка списка 
+        for (int i = 0; i < elements.Count; i++)
+        {
+            if (Head == null)
+            {
+                Head = new ListNode(elements[i][dataFieldID].ToString());
+                Head.Prev = null; 
+                Head.Next = null;
+                Head.Rand = null;
+
+                currentItem = Head;
+            }
+
+            if (elements[i][nextFieldID] != defaultValue)
+            {
+                var newItem = new ListNode(elements[i + 1][dataFieldID].ToString());
+                    newItem.Prev = currentItem;
+                    newItem.Next = null;
+                    newItem.Rand = null;
+
+                currentItem.Next = newItem;
+                currentItem = newItem; 
+            }
+        }
+
+        Tail = currentItem;
+        Count = elements.Count;
+
+        //Инициализация ссылок на рандомные объекты
+        for (int i = 0; i < elements.Count; i++)
+        {
+            if (elements[i][randFieldID] != defaultValue)
+            {
+                var randomItemID = elements[i][randFieldID];
+
+                var randomItem = GetByIndex(randomItemID);
+
+                var parentItem = GetByIndex(i);
+                    parentItem.Rand = randomItem;
+            }    
+        }
+
+        elements.Clear();
+    }
 }
