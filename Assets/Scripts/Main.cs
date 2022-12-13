@@ -6,7 +6,7 @@ using UnityEngine;
 public class Main : MonoBehaviour
 {
     [SerializeField] private int _numberOfElement = 5;
-    [SerializeField] private string _fileName = "note.txt";
+    [SerializeField] private string _fileName = "note.dat";
 
     private ListRand _list = new ListRand();
 
