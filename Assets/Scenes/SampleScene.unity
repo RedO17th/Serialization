@@ -331,7 +331,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _numberOfElement: 5
-  _fileName: note.dat
+  _fileName: note.txt
 --- !u!4 &2014302002
 Transform:
   m_ObjectHideFlags: 0
