@@ -67,7 +67,7 @@ class ListRand
 
         for (int i = 0; i < index; i++)
         {
-            if(result.Next != null)
+            if (result.Next != null)
                 result = result.Next;
         }
 
@@ -86,7 +86,7 @@ class ListRand
 
         WriteData(s, indexes);
 
-        //[COMMIT] Сan do it like this, but will it be clear
+        //Сan do it like this, but will it be clear
         // WriteData(s, GenerateArrayOfRandomIndexes());
     }
 
@@ -140,8 +140,8 @@ class ListRand
 
         for (int i = 0; i < Count; i++)
         {
-            sw.WriteLine(indexes[i].ToString());
             sw.WriteLine(currentItem.Data);
+            sw.WriteLine(indexes[i].ToString());
 
             currentItem = currentItem.Next;
         }
@@ -153,7 +153,7 @@ class ListRand
 
     public void Clear()
     {
-        if(Head == null)
+        if (Head == null)
             return;
 
         ClearMainSequance();
@@ -187,111 +187,87 @@ class ListRand
 
     #region Deserialization
 
-    public void Deserialize(FileStream s) 
+    public void Deserialize(FileStream s)
     {
-        //List<int[]> items = GenerateItemsFromFile(s);
+        var indexes = GenerateMainSequanceFromFile(s);
 
-        //if (items.Count == 0)
-        //    return;
-
-        //ListNode lastItem = InitializeHeadItem();
-
-        //GenerateMainSequance(ref lastItem, items);
-
-        //Tail = lastItem;
-        //Count = items.Count;
-
-        //AddRandomItemsToSequenceItems(items);
-
-        //items.Clear();
+        InitializeRandomItemsInSequance(indexes);
     }
-    #endregion
 
-    #region Green
-    //private List<int[]> GenerateItemsFromFile(FileStream s)
-    //{
-    //    var items = new List<int[]>();
+    //Return array of random items
+    private int[] GenerateMainSequanceFromFile(FileStream s)
+    {
+        using StreamReader sw = new StreamReader(s);
 
-    //    char splitter = ':';
-    //    string resultLine = string.Empty;
+        Count = Convert.ToInt32(sw.ReadLine());
 
-    //    using StreamReader sr = new StreamReader(s);
+        var indexes = new int[Count];
 
-    //    while ((resultLine = sr.ReadLine()) != null)
-    //    {
-    //        string[] dataInLine = resultLine.Split(new char[] { splitter }, StringSplitOptions.RemoveEmptyEntries);
+        Head = new ListNode();
 
-    //        items.Add(GenerateArrayOfIndexes(dataInLine));
-    //    }
+        var currentItem = Head;
 
-    //    return items;
-    //}
+        for (int i = 0; i < Count; i++)
+        {
+            if (i == 0)
+            {
+                currentItem.Data = sw.ReadLine();
+                currentItem.Prev = null;
+                currentItem.Next = new ListNode();
 
-    //private int[] GenerateArrayOfIndexes(string[] dataInLine)
-    //{
-    //    if (dataInLine.Length == 0)
-    //        return new int[0];
+                indexes[i] = Convert.ToInt32(sw.ReadLine());
+            }
+            else
+            {
+                currentItem.Next.Prev = currentItem;
+                currentItem = currentItem.Next;
+                currentItem.Data = sw.ReadLine();
+                if (i != Count - 1)
+                    currentItem.Next = new ListNode();
+                else
+                    Tail = currentItem;
 
-    //    var result = new int[dataInLine.Length];
+                indexes[i] = Convert.ToInt32(sw.ReadLine());
+            }
+        }
 
-    //    for (int i = 0; i < dataInLine.Length; i++)
-    //        result[i] = Convert.ToInt32(dataInLine[i]);
+        return indexes;
+    }
 
-    //    return result;
-    //}
+    private void InitializeRandomItemsInSequance(int[] indexes)
+    {
+        var currentItem = Head;
+        var randomItem = Head;
+        int unknownID = -1;
 
-    //private ListNode InitializeHeadItem()
-    //{
-    //    Head = new ListNode();
-    //    Head.Prev = null;
-    //    Head.Next = null;
+        for (int i = 0, j = 0; j < Count; i++)
+        {
+            if (indexes[j] == unknownID)
+            {
+                currentItem = currentItem.Next;
 
-    //    return Head;
-    //}
+                i = unknownID;
+                j++;
 
-    //private void GenerateMainSequance(ref ListNode currentItem, List<int[]> items)
-    //{
-    //    ListNode nextItem = null;
+                continue;
+            }
 
-    //    int dataPositionIndex = 3;
+            if (indexes[j] == i)
+            {
+                currentItem.Rand = randomItem;
+                currentItem = currentItem.Next;
 
-    //    for (int i = 0; i < items.Count; i++)
-    //    {
-    //        currentItem.Data = items[i][dataPositionIndex].ToString();
-    //        currentItem.Rand = null;
+                randomItem = Head;
 
-    //        if (i != (items.Count - 1))
-    //        {
-    //            nextItem = new ListNode();
+                i = unknownID;
+                j++;
 
-    //            currentItem.Next = nextItem;
-    //            nextItem.Prev = currentItem;
+                continue;
+            }
 
-    //            currentItem = nextItem;
-    //        }
-    //    }
-    //}
-
-    //private void AddRandomItemsToSequenceItems(List<int[]> items)
-    //{
-    //    int unknownIndex = -1;
-    //    int referencePositionIndex = 2;
-
-    //    for (int i = 0; i < items.Count; i++)
-    //    {
-    //        var fieldsData = items[i];
-
-    //        if (fieldsData[referencePositionIndex] != unknownIndex)
-    //        {
-    //            var randomItemID = fieldsData[referencePositionIndex];
-
-    //            var randomItem = GetByIndex(randomItemID);
-
-    //            var parentItem = GetByIndex(i);
-    //                parentItem.Rand = randomItem;
-    //        }
-    //    }
-    //}
+            randomItem = randomItem.Next;
+        }
+    }
 
     #endregion
 }

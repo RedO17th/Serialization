@@ -22,12 +22,12 @@ public class Main : MonoBehaviour
             _list.Serialize(fstream);
         }
 
-        //_list.Clear();
+        _list.Clear();
 
-        //using (FileStream fstream = File.OpenRead(_path))
-        //{
-        //    _list.Deserialize(fstream);
-        //}
+        using (FileStream fstream = File.OpenRead(_path))
+        {
+            _list.Deserialize(fstream);
+        }
     }
 
     private void InitializeList()
