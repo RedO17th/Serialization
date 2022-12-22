@@ -82,12 +82,42 @@ class ListRand
 
     public void Serialize(FileStream s)
     {
-        using StreamWriter sw = new StreamWriter(s);
+        int[] indexes = new int[Count];
+        
+        var currentItem = Head;
+        var randomItem = Head;
 
-        for (ListNode currentNode = Head; currentNode != null; currentNode = currentNode.Next)
+        int unknownID = -1;
+
+        for (int i = 0, j = 0; j < Count; i++)
         {
-            sw.WriteLine($"{ GetID(currentNode.Prev) }:{ GetID(currentNode.Next) }:{ GetID(currentNode.Rand) }:{ currentNode.Data }");
+            if (currentItem?.Rand == null)
+            {
+                indexes[j] = unknownID;
+
+                currentItem = currentItem.Next;
+
+                j++;
+            }
+
+            if (currentItem?.Rand == randomItem)
+            {
+                indexes[j] = i;
+
+                currentItem = currentItem.Next;
+
+                randomItem = Head;
+
+                i = -1;
+                j++;
+
+                continue;
+            }
+
+            randomItem = randomItem.Next;
         }
+
+        int a = 5;
     }
 
     private int GetID(ListNode element)
